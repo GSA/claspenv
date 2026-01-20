@@ -1,0 +1,35 @@
+{
+  "name": "claspenv",
+  "version": "0.1.0",
+  "description": "A command-line utility for managing Google Apps Script Project environments",
+  "main": "dist/claspenv.js",
+  "private": "true",
+  "bin": {
+    "claspenv": "dist/claspenv.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "dev": "ts-node claspenv.ts"
+  },
+  "keywords": [
+    "clasp",
+    "google-apps-script",
+    "environment",
+    "deployment"
+  ],
+  "author": "Anthony Peluso",
+  "dependencies": {
+    "arg": "^5.0.2",
+    "fs-extra": "^11.2.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.11.20",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}
