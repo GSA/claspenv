@@ -16,7 +16,7 @@ Documentation is evolving.
 
 ## Description
 
-This tool helps manage multiple environments (currently local, dev, stage, prod) for Google Apps Script projects using the `clasp` tool. It allows you to easily switch between different script IDs for different environments without manually editing `.clasp.json` files.
+This tool helps manage multiple environments (currently local, dev, stage, prod) for Google Apps Script projects using the `clasp` tool.
 
 ## Installation
 
@@ -80,14 +80,9 @@ First, the git repository is checked for `dev`, `stage` and `prod` branches.
 
 If these branches do not exist, the user is prompted to ask if they want to create them.
 
-Next, the following files are created:
-- `.claspenv.config.json` - Base configuration file
-- `.claspenv.config.local.example.json` - Example local configuration file
-- `.claspenv.config.local.json` - Local configuration file (empty by default)
+Then the user is prompted for the Script IDs for the dev, stage and prod Google Apps Script Projects.
 
-The user is then prompted for the Script IDs for the dev, stage and prod Google Apps Script Projects.
-
-Once those are configured, it prompts the user to create an initialization commit for the new `clasp` configuration which is then pushed to the remote GitHub repository.
+Once those are configured, it prompts the user to create an initialization commit for the new configuration which is then pushed to the remote GitHub repository.
 
 ## Setting up to Develop
 
