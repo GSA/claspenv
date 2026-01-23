@@ -121,6 +121,22 @@ When `dev` is ready, merge `dev` branch into `stage` branch and `claspenv push s
 
 When `stage` is approved, merge `stage` into `prod` and create a release branch (e.g. `release-0.1.0`), then switch to this release branch and `claspenv push prod`, then deploy to customer facing environment.
 
+## Deployment
+
+To keep URL consistency, this utility targets a deployment named `claspenv-active`. That way the URL will not change on redeployment.
+
+To deploy to an environment, use the following format:
+
+```bash
+claspenv deploy <environment>
+```
+
+If no deployments exist, a deployment named `claspenv-active` will be created.
+
+If a deployment named `claspenv-active` exists, it will be redeployed with the currently pushed code. NOTE: This is not the current code on the developer's machine or in the current git branch. The desired environment's updated code must be pushed with `claspenv push <environment>` first.
+
+If deployments exist, but none of them are named `claspenv-active`, you should pick the currently viewer-facing deployment and rename it `claspenv-active`. Or create a new deployment named `claspenv-active` in order to use deployment with this utility.
+
 ## Manual Procedures
 
 ### Manually Configure Environments
@@ -171,5 +187,8 @@ claspenv --init
 
 ## To Do
 
+- Offer to create .gitignore if it doesn't exist
 - Allow Custom Environment Setups
 - Test against more projects
+- Possibly incorporate more `clasp` commands
+- Possibly incorporate more `git` automation

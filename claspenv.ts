@@ -22,6 +22,33 @@ type ClaspData = {
   scriptId?: string;
 };
 
+// Constants
+const CLASP_CONFIG_PATH = '.clasp.json';
+const CLASPENV_CONFIG_PATH = '.claspenv.config.json';
+const CLASPENV_LOCAL_CONFIG_PATH = '.claspenv.config.local.json';
+const CLASPENV_EXAMPLE_CONFIG_PATH = '.claspenv.config.local.example.json';
+const GITIGNORE_PATH = '.gitignore';
+
+/**
+ * Check if this is a clasp project by verifying .clasp.json exists
+ */
+function isClaspProject(): boolean {
+  if (!fs.existsSync(CLASP_CONFIG_PATH)) {
+    console.error(
+      'Error: clasp configuration not found. This is not a clasp project. Please run this command in a clasp project directory.'
+    );
+    return false;
+  }
+  return true;
+}
+/**
+ * set the script id in .clasp.json
+ * @param targetScriptId Script to change to
+ */
+function setClaspId(targetScriptId: string): void {
+  fs.writeJSONSync(CLASP_CONFIG_PATH, { scriptId: targetScriptId }, { spaces: 2 });
+}
+
 /**
  * Load configuration from JSON file
  * @param configFilePath Path to the configuration file
@@ -69,14 +96,8 @@ function getTargetScriptId(environment: string, configData: ConfigData): string 
  * Initialize the configuration files with blank values
  */
 async function initConfigFiles(): Promise<void> {
-  // Check if this is a clasp project by verifying .clasp.json exists
-  const claspJsonPath = '.clasp.json';
-  if (!fs.existsSync(claspJsonPath)) {
-    console.error(
-      'Error: .clasp.json file not found. This is not a clasp project. Please run this command in a clasp project directory.'
-    );
-    process.exit(1);
-  }
+  // check if this is a clasp project
+  if (!isClaspProject()) process.exit(1);
 
   // Check if this is a git repository
   let isGitRepo = false;
@@ -91,8 +112,8 @@ async function initConfigFiles(): Promise<void> {
 
   // Check for existing clasp configuration files
   const configFiles = [
-    '.claspenv.config.json',
-    '.claspenv.config.local.json',
+    CLASPENV_CONFIG_PATH,
+    CLASPENV_LOCAL_CONFIG_PATH,
   ];
 
   const existingFiles = configFiles.filter(f => fs.existsSync(f));
@@ -113,16 +134,16 @@ async function initConfigFiles(): Promise<void> {
     prod: { script_id: '' },
   };
 
-  saveConfig('.claspenv.config.json', baseConfig);
+  saveConfig(CLASPENV_CONFIG_PATH, baseConfig);
 
   // Create the local example file
   const exampleConfig = {
     local: {
-      script_id: 'Put the id for your \'local\' version of the apps script project here and rename to .claspenv.config.local.json',
+      script_id: `Put the id for your \'local\' version of the apps script project here and rename to ${CLASPENV_LOCAL_CONFIG_PATH}`,
     },
   };
 
-  saveConfig('.claspenv.config.local.example.json', exampleConfig);
+  saveConfig(CLASPENV_EXAMPLE_CONFIG_PATH, exampleConfig);
 
   // If this is a git repository, check for dev, stage, and prod branches
   if (isGitRepo) {
@@ -221,9 +242,8 @@ async function initConfigFiles(): Promise<void> {
 
     // Load existing config data to update it
     let configData: ConfigData = {};
-    const baseConfigPath = '.claspenv.config.json';
-    if (fs.existsSync(baseConfigPath)) {
-      configData = loadConfig(baseConfigPath);
+    if (fs.existsSync(CLASPENV_CONFIG_PATH)) {
+      configData = loadConfig(CLASPENV_CONFIG_PATH);
     }
 
     // Update the config with the provided script IDs
@@ -240,8 +260,8 @@ async function initConfigFiles(): Promise<void> {
     configData['prod'] = prodConfig;
 
     // Save the updated config
-    saveConfig(baseConfigPath, configData);
-    console.log('Script IDs have been saved to .claspenv.config.json');
+    saveConfig(CLASPENV_CONFIG_PATH, configData);
+    console.log('Script IDs have been saved');
 
     // Ask user if they want to make a configuration commit
     console.log('\nConfiguration files have been initialized with script IDs.');
@@ -262,7 +282,7 @@ async function initConfigFiles(): Promise<void> {
 
         // Add configuration file
         console.log('Adding configuration file to commit...');
-        const addResult = child_process.spawnSync('git', ['add', '.claspenv.config.json'], {
+        const addResult = child_process.spawnSync('git', ['add', CLASPENV_CONFIG_PATH], {
           encoding: 'utf-8',
         });
         if (addResult.status !== 0) {
@@ -305,13 +325,11 @@ async function initConfigFiles(): Promise<void> {
   }
 
   // Update .gitignore if it exists and the local config isn't already present
-  const gitignorePath = '.gitignore';
-  if (fs.existsSync(gitignorePath)) {
-    const gitignoreContent = fs.readFileSync(gitignorePath, 'utf-8');
+  if (fs.existsSync(GITIGNORE_PATH)) {
+    const gitignoreContent = fs.readFileSync(GITIGNORE_PATH, 'utf-8');
 
-    const localConfigFile = '.claspenv.config.local.json';
-    if (!gitignoreContent.includes(localConfigFile)) {
-      fs.appendFileSync(gitignorePath, `\n# Clasp Local Environment Files\n${localConfigFile}\n`);
+    if (!gitignoreContent.includes(CLASPENV_LOCAL_CONFIG_PATH)) {
+      fs.appendFileSync(GITIGNORE_PATH, `\n# Clasp Local Environment Files\n${CLASPENV_LOCAL_CONFIG_PATH}\n`);
       console.log('Updated .gitignore with local config file');
     }
   }
@@ -325,18 +343,11 @@ async function initConfigFiles(): Promise<void> {
  * Initialize local configuration with script ID
  */
 async function localInit(): Promise<void> {
-  // Check if this is a clasp project by verifying .clasp.json exists
-  const claspJsonPath = '.clasp.json';
-  if (!fs.existsSync(claspJsonPath)) {
-    console.error(
-      'Error: .clasp.json file not found. This is not a clasp project. Please run this command in a clasp project directory.'
-    );
-    process.exit(1);
-  }
+  // check if this is a clasp project
+  if (!isClaspProject()) process.exit(1);
 
   // Check if the example config file exists
-  const exampleConfigPath = '.claspenv.config.local.example.json';
-  if (!fs.existsSync(exampleConfigPath)) {
+  if (!fs.existsSync(CLASPENV_EXAMPLE_CONFIG_PATH)) {
     console.error(
       'Error: Initial configuration files not found. Please run \'claspenv --init\' first to create them.'
     );
@@ -351,10 +362,9 @@ async function localInit(): Promise<void> {
   }
 
   // Copy the example config file to the local config file
-  const localConfigPath = '.claspenv.config.local.json';
   try {
-    fs.copySync(exampleConfigPath, localConfigPath);
-    console.log(`Copied ${exampleConfigPath} to ${localConfigPath}`);
+    fs.copySync(CLASPENV_EXAMPLE_CONFIG_PATH, CLASPENV_LOCAL_CONFIG_PATH);
+    console.log(`Copied ${CLASPENV_EXAMPLE_CONFIG_PATH} to ${CLASPENV_LOCAL_CONFIG_PATH}`);
   } catch (error) {
     console.error(`Error copying example config file: ${error}`);
     process.exit(1);
@@ -363,7 +373,7 @@ async function localInit(): Promise<void> {
   // Update the local script ID in the copied config file
   try {
     // Load the config file
-    let configData = loadConfig(localConfigPath);
+    let configData = loadConfig(CLASPENV_LOCAL_CONFIG_PATH);
 
     // Update the local script ID
     const localConfig = configData['local'] || { script_id: '' };
@@ -371,7 +381,7 @@ async function localInit(): Promise<void> {
     configData['local'] = localConfig;
 
     // Save the updated config
-    saveConfig(localConfigPath, configData);
+    saveConfig(CLASPENV_LOCAL_CONFIG_PATH, configData);
     console.log(`Updated local script ID to: ${scriptId}`);
   } catch (error) {
     console.error(`Error updating config file: ${error}`);
@@ -398,6 +408,108 @@ async function promptUser(question: string): Promise<string> {
       resolve(answer);
     });
   });
+}
+
+/**
+ * Deploy function that handles deployment to environments
+ * @param environment Environment to deploy to
+ * @param configData Configuration data
+ */
+async function deploy(environment: string, configData: ConfigData): Promise<void> {
+  // check if this is a clasp project
+  if (!isClaspProject()) process.exit(1);
+
+  const claspData: ClaspData = fs.readJSONSync(CLASP_CONFIG_PATH);
+
+  // Store original script id
+  const originalScriptId = claspData.scriptId || '';
+
+  // Get the target scriptId based on environment
+  const targetScriptId = getTargetScriptId(environment, configData);
+
+  if (!targetScriptId) {
+    console.error(`Error: No scriptId found for ${environment} environment`);
+    process.exit(1);
+  }
+
+  // Update .clasp.json with target scriptId
+  setClaspId(targetScriptId);
+
+  // Run clasp list-deployments to check current deployments
+  console.log('Checking current deployments...');
+  try {
+    const listResult = child_process.spawnSync('clasp', ['list-deployments'], {
+      encoding: 'utf-8',
+    });
+
+    if (listResult.status !== 0) {
+      console.error(`Error running clasp list-deployments: ${listResult.stderr}`);
+      setClaspId(originalScriptId);
+      process.exit(1);
+    }
+
+    // Parse the deployments output
+    const lines = listResult.stdout.split('\n').filter(line => line.trim() !== '');
+
+    // if we have multiple deployments
+    if (lines?.length > 2) {
+      let activeDeploymentId = '';
+      for (const line of lines) {
+        if (line.includes('claspenv-active')) {
+          // Extract deployment ID from the line
+          const parts = line.split('-');
+          if (parts.length > 1) {
+            const idPart = parts[1]?.trim().split('@')[0]?.trim();
+            if (idPart) {
+              activeDeploymentId = idPart;
+              break;
+            }
+          }
+        }
+      }
+
+      if (activeDeploymentId) {
+        console.log('Found active claspenv deployment, redeploying');
+        const redeployResult = child_process.spawnSync('clasp', ['redeploy', '-d', 'claspenv-active', activeDeploymentId], {
+          stdio: 'inherit',
+        });
+
+        if (redeployResult.status !== 0) {
+          console.error(`Error running clasp redeploy: ${redeployResult.stderr}`);
+          setClaspId(originalScriptId);
+          console.log('Redeployment completed successfully');
+          process.exit(1);
+        }
+      }
+    } else if (lines?.length == 2 && lines[1]?.trim()?.endsWith('@HEAD')) {
+      console.log('No deployments found, creating new deployment...');
+      const deployResult = child_process.spawnSync('clasp', ['deploy', '-d', 'claspenv-active'], {
+        stdio: 'inherit',
+      });
+
+      if (deployResult.status !== 0) {
+        console.error(`Error running clasp deploy: ${deployResult.stderr}`);
+        setClaspId(originalScriptId);
+        console.log('Deployment completed successfully');
+        process.exit(1);
+      }
+    } else {
+      setClaspId(originalScriptId);
+      // Not creating a new deployment for claspenv if there are existing deployments that are not from claspenv
+      // Since likely one of those is already the active, viewer facing deployment
+      console.log('Deployments found, but none from claspenv. Create or rename preferred deployment to "claspenv-active" to set deployment target.');
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error(`Error running clasp list-deployments: ${error}`);
+    setClaspId(originalScriptId);
+    process.exit(1);
+  }
+
+  // Reset .clasp.json back to original scriptId (always run this cleanup)
+  setClaspId(originalScriptId);
+
+  console.log(`Completed deploy for ${environment} environment`);
 }
 
 /**
@@ -438,9 +550,10 @@ Options:
 Actions:
   push            Push to environment
   pull            Pull from environment
+  deploy          Deploy to environment
 
 Environments:
-  local           Local environment
+  local           "Local" environment
   dev             Development environment
   stage           Staging environment
   prod            Production environment
@@ -450,6 +563,14 @@ Examples:
   claspenv --local-init
   claspenv pull dev
   claspenv push prod
+  claspenv deploy stage
+
+Note on Deployment:
+Deployments will be pushed to the environment's deployment named 'claspenv-active'.
+If no deployments are found, a new deployment named 'claspenv-active' will be created.
+If deployments are found, but none are named 'claspenv-active',
+rename your preferred, viewer facing deployment to 'claspenv-active'
+or create a new one named 'claspenv-active' to use this utility.
     `);
     return;
   }
@@ -478,8 +599,8 @@ Examples:
   }
 
   // Validate action
-  if (action !== 'push' && action !== 'pull') {
-    console.error("Error: Action must be 'push' or 'pull'");
+  if (action !== 'push' && action !== 'pull' && action !== 'deploy') {
+    console.error("Error: Action must be 'push', 'pull', or 'deploy'");
     process.exit(1);
   }
 
@@ -489,14 +610,38 @@ Examples:
     process.exit(1);
   }
 
-  // Read original scriptId from .clasp.json
-  const claspJsonPath = '.clasp.json';
-  if (!fs.existsSync(claspJsonPath)) {
-    console.error('Error: .clasp.json file not found');
-    process.exit(1);
+  // Handle deploy action
+  if (action === 'deploy') {
+    // Load configuration data
+    let configData: ConfigData = {};
+
+    // Load local config if it exists
+    if (fs.existsSync(CLASPENV_LOCAL_CONFIG_PATH)) {
+      configData = { ...configData, ...loadConfig(CLASPENV_LOCAL_CONFIG_PATH) };
+    }
+
+    // Load base config if it exists
+    if (fs.existsSync(CLASPENV_CONFIG_PATH)) {
+      configData = { ...configData, ...loadConfig(CLASPENV_CONFIG_PATH) };
+    }
+
+    // If no config files found, warn the user
+    if (Object.keys(configData).length === 0) {
+      console.error(
+        'Warning: No configuration files found. Please run \'claspenv --init\' to create them.'
+      );
+      process.exit(1);
+    }
+
+    // Run deploy function
+    await deploy(environment, configData);
+    return;
   }
 
-  const claspData: ClaspData = fs.readJSONSync(claspJsonPath);
+  // check if this is a clasp project
+  if (!isClaspProject()) process.exit(1);
+
+  const claspData: ClaspData = fs.readJSONSync(CLASP_CONFIG_PATH);
 
   // Store original script id
   const originalScriptId = claspData.scriptId || '';
@@ -505,15 +650,13 @@ Examples:
   let configData: ConfigData = {};
 
   // Load local config if it exists
-  const localConfigPath = '.claspenv.config.local.json';
-  if (fs.existsSync(localConfigPath)) {
-    configData = { ...configData, ...loadConfig(localConfigPath) };
+  if (fs.existsSync(CLASPENV_LOCAL_CONFIG_PATH)) {
+    configData = { ...configData, ...loadConfig(CLASPENV_LOCAL_CONFIG_PATH) };
   }
 
   // Load base config if it exists
-  const baseConfigPath = '.claspenv.config.json';
-  if (fs.existsSync(baseConfigPath)) {
-    configData = { ...configData, ...loadConfig(baseConfigPath) };
+  if (fs.existsSync(CLASPENV_CONFIG_PATH)) {
+    configData = { ...configData, ...loadConfig(CLASPENV_CONFIG_PATH) };
   }
 
   // If no config files found, warn the user
@@ -551,9 +694,7 @@ Examples:
     );
 
     // Update .clasp.json with target scriptId only if user confirmed
-    console.log(`Updating .clasp.json with scriptId: ${targetScriptId}`);
-    claspData.scriptId = targetScriptId;
-    fs.writeJSONSync(claspJsonPath, claspData, { spaces: 2 });
+    setClaspId(targetScriptId);
 
     // Run the clasp command
     console.log(`Running clasp ${action}...`);
@@ -572,9 +713,7 @@ Examples:
     }
 
     // Reset .clasp.json back to original scriptId (always run this cleanup)
-    console.log(`Resetting .clasp.json back to original scriptId: ${originalScriptId}`);
-    claspData.scriptId = originalScriptId;
-    fs.writeJSONSync(claspJsonPath, claspData, { spaces: 2 });
+    setClaspId(originalScriptId);
 
     console.log(`Completed ${action} for ${environment} environment`);
   }
