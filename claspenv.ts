@@ -324,16 +324,6 @@ async function initConfigFiles(): Promise<void> {
     }
   }
 
-  // Update .gitignore if it exists and the local config isn't already present
-  if (fs.existsSync(GITIGNORE_PATH)) {
-    const gitignoreContent = fs.readFileSync(GITIGNORE_PATH, 'utf-8');
-
-    if (!gitignoreContent.includes(CLASPENV_LOCAL_CONFIG_PATH)) {
-      fs.appendFileSync(GITIGNORE_PATH, `\n# Clasp Local Environment Files\n${CLASPENV_LOCAL_CONFIG_PATH}\n`);
-      console.log('Updated .gitignore with local config file');
-    }
-  }
-
   console.log(
     "Initialized configuration"
   );
@@ -386,6 +376,21 @@ async function localInit(): Promise<void> {
   } catch (error) {
     console.error(`Error updating config file: ${error}`);
     process.exit(1);
+  }
+
+  // Update .gitignore to include the local config file if it exists and isn't already present
+  // If .gitignore doesn't exist, create it
+  if (fs.existsSync(GITIGNORE_PATH)) {
+    const gitignoreContent = fs.readFileSync(GITIGNORE_PATH, 'utf-8');
+
+    if (!gitignoreContent.includes(CLASPENV_LOCAL_CONFIG_PATH)) {
+      fs.appendFileSync(GITIGNORE_PATH, `\n# Clasp Local Environment Files\n${CLASPENV_LOCAL_CONFIG_PATH}\n`);
+      console.log('Updated .gitignore with local config file');
+    }
+  } else {
+    // Create .gitignore file if it doesn't exist
+    fs.writeFileSync(GITIGNORE_PATH, `# Clasp Local Environment Files\n${CLASPENV_LOCAL_CONFIG_PATH}\n`);
+    console.log('Created .gitignore with local config file');
   }
 
   console.log('Local configuration initialized successfully.');
