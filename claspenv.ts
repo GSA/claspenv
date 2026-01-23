@@ -610,34 +610,6 @@ or create a new one named 'claspenv-active' to use this utility.
     process.exit(1);
   }
 
-  // Handle deploy action
-  if (action === 'deploy') {
-    // Load configuration data
-    let configData: ConfigData = {};
-
-    // Load local config if it exists
-    if (fs.existsSync(CLASPENV_LOCAL_CONFIG_PATH)) {
-      configData = { ...configData, ...loadConfig(CLASPENV_LOCAL_CONFIG_PATH) };
-    }
-
-    // Load base config if it exists
-    if (fs.existsSync(CLASPENV_CONFIG_PATH)) {
-      configData = { ...configData, ...loadConfig(CLASPENV_CONFIG_PATH) };
-    }
-
-    // If no config files found, warn the user
-    if (Object.keys(configData).length === 0) {
-      console.error(
-        'Warning: No configuration files found. Please run \'claspenv --init\' to create them.'
-      );
-      process.exit(1);
-    }
-
-    // Run deploy function
-    await deploy(environment, configData);
-    return;
-  }
-
   // check if this is a clasp project
   if (!isClaspProject()) process.exit(1);
 
@@ -677,7 +649,7 @@ or create a new one named 'claspenv-active' to use this utility.
 
   // Add confirmation for dev, stage, and prod environments on push actions only
   let shouldContinue = true;
-  if (['dev', 'stage', 'prod'].includes(environment) && action === 'push') {
+  if (['dev', 'stage', 'prod'].includes(environment) && ['push', 'deploy'].includes(action)) {
     const confirmation = await promptUser(
       `Are you sure you want to ${action} to the ${environment} environment? (y/N): `
     );
@@ -685,6 +657,13 @@ or create a new one named 'claspenv-active' to use this utility.
       console.log(`Cancelled ${action} to ${environment} environment.`);
       shouldContinue = false;
     }
+  }
+
+  // Handle deploy action
+  if (action === 'deploy') {
+    // Run deploy function
+    await deploy(environment, configData);
+    return;
   }
 
   // Only proceed with changes and clasp command if we should continue
@@ -707,7 +686,6 @@ or create a new one named 'claspenv-active' to use this utility.
         process.exit(1);
       }
     } catch (error) {
-      console.error(`Error running clasp ${action}: ${error}`);
       console.error('Error: clasp command not found. Please install clasp with \'npm install -g @google/clasp\'');
       process.exit(1);
     }
