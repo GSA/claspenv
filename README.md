@@ -184,11 +184,3 @@ claspenv --init
 
 - `npm`
 - [clasp](https://github.com/google/clasp) - Google Apps Script command-line tool
-
-## To Do
-
-- Offer to create .gitignore if it doesn't exist
-- Allow Custom Environment Setups
-- Test against more projects
-- Possibly incorporate more `clasp` commands
-- Possibly incorporate more `git` automation

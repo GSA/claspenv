@@ -27,7 +27,9 @@ const CLASP_CONFIG_PATH = '.clasp.json';
 const CLASPENV_CONFIG_PATH = '.claspenv.config.json';
 const CLASPENV_LOCAL_CONFIG_PATH = '.claspenv.config.local.json';
 const CLASPENV_EXAMPLE_CONFIG_PATH = '.claspenv.config.local.example.json';
+const CLASPIGNORE_PATH = '.claspignore';
 const GITIGNORE_PATH = '.gitignore';
+const README_PATH = 'README.md';
 
 /**
  * Check if this is a clasp project by verifying .clasp.json exists
@@ -263,8 +265,64 @@ async function initConfigFiles(): Promise<void> {
     saveConfig(CLASPENV_CONFIG_PATH, configData);
     console.log('Script IDs have been saved');
 
+    // Check if README.md exists, if not, ask user if they want to create one
+    const readmeExists = fs.existsSync(README_PATH);
+    if (!readmeExists) {
+      const response = await promptUser('Do you want to create a basic README.md file? (y/N): ');
+      if (response.toLowerCase().startsWith('y')) {
+        const basicReadmeContent = `# Project Name
+
+A brief description of your Google Apps Script project.
+
+## This project uses clasp and claspenv
+
+### Installing \`clasp\`
+
+\`\`\`bash
+npm install -g @google/clasp
+clasp auth login
+\`\`\`
+
+### Installing \`claspenv\` from source
+
+\`\`\`bash
+git clone https://github.com/GSA-APS/claspenv.git
+cd claspenv
+npm install
+npm run build && npm install -g .
+\`\`\`
+
+## Usage
+
+To push, pull and deploy, read the following:
+
+\`\`\`bash
+claspenv --help
+\`\`\`
+
+## Features
+
+- Manages multiple Google Apps Script environments
+- Local, dev, stage, and prod environments
+- Git integration
+`;
+        fs.writeFileSync(README_PATH, basicReadmeContent);
+        console.log('README.md created successfully');
+
+        // Check if .claspignore exists and update it
+        const claspignoreExists = fs.existsSync(CLASPIGNORE_PATH);
+        if (claspignoreExists) {
+          const claspignoreContent = fs.readFileSync(CLASPIGNORE_PATH, 'utf-8');
+          if (!claspignoreContent.includes(README_PATH)) {
+            fs.appendFileSync(CLASPIGNORE_PATH, `\n${README_PATH}\n`);
+          }
+        } else {
+          fs.writeFileSync(CLASPIGNORE_PATH, `${README_PATH}\n`);
+        }
+      }
+    }
+
     // Ask user if they want to make a configuration commit
-    console.log('\nConfiguration files have been initialized with script IDs.');
     const response = await promptUser('Do you want to make a configuration commit? (y/N): ');
     if (response.toLowerCase().startsWith('y')) {
       try {
