@@ -48,7 +48,9 @@ function isClaspProject(): boolean {
  * @param targetScriptId Script to change to
  */
 function setClaspId(targetScriptId: string): void {
-  fs.writeJSONSync(CLASP_CONFIG_PATH, { scriptId: targetScriptId }, { spaces: 2 });
+  const claspConfig = fs.readJSONSync(CLASP_CONFIG_PATH);
+  claspConfig.scriptId = targetScriptId;
+  fs.writeJSONSync(CLASP_CONFIG_PATH, claspConfig, { spaces: 2 });
 }
 
 /**
