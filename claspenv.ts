@@ -34,7 +34,7 @@ const README_PATH = 'README.md';
 /**
  * Check if this is a clasp project by verifying .clasp.json exists
  */
-function isClaspProject(): boolean {
+const isClaspProject = (): boolean => {
   if (!fs.existsSync(CLASP_CONFIG_PATH)) {
     console.error(
       'Error: clasp configuration not found. This is not a clasp project. Please run this command in a clasp project directory.',
@@ -42,23 +42,23 @@ function isClaspProject(): boolean {
     return false;
   }
   return true;
-}
+};
 /**
  * set the script id in .clasp.json
  * @param targetScriptId Script to change to
  */
-function setClaspId(targetScriptId: string): void {
+const setClaspId = (targetScriptId: string): void => {
   const claspConfig = fs.readJSONSync(CLASP_CONFIG_PATH);
   claspConfig.scriptId = targetScriptId;
   fs.writeJSONSync(CLASP_CONFIG_PATH, claspConfig, { spaces: 2 });
-}
+};
 
 /**
  * Load configuration from JSON file
  * @param configFilePath Path to the configuration file
  * @returns Configuration data or empty object if file doesn't exist
  */
-function loadConfig(configFilePath: string): ConfigData {
+const loadConfig = (configFilePath: string): ConfigData => {
   try {
     if (!fs.existsSync(configFilePath)) {
       return {};
@@ -69,14 +69,14 @@ function loadConfig(configFilePath: string): ConfigData {
     console.error(`Error loading config from ${configFilePath}:`, error);
     return {};
   }
-}
+};
 
 /**
  * Save configuration to JSON file
  * @param configFilePath Path to the configuration file
  * @param configData Configuration data to save
  */
-function saveConfig(configFilePath: string, configData: ConfigData): void {
+const saveConfig = (configFilePath: string, configData: ConfigData): void => {
   try {
     fs.writeFileSync(
       configFilePath,
@@ -87,7 +87,7 @@ function saveConfig(configFilePath: string, configData: ConfigData): void {
     console.error(`Error saving config to ${configFilePath}:`, error);
     process.exit(1);
   }
-}
+};
 
 /**
  * Get the target script ID based on environment
@@ -95,18 +95,18 @@ function saveConfig(configFilePath: string, configData: ConfigData): void {
  * @param configData Configuration data
  * @returns Script ID for the environment or empty string if not found
  */
-function getTargetScriptId(
+const getTargetScriptId = (
   environment: string,
   configData: ConfigData,
-): string {
+): string => {
   const envConfig = configData[environment];
   return envConfig?.script_id || '';
-}
+};
 
 /**
  * Initialize the configuration files with blank values
  */
-async function initConfigFiles(): Promise<void> {
+const initConfigFiles = async (): Promise<void> => {
   // check if this is a clasp project
   if (!isClaspProject()) process.exit(1);
 
@@ -417,12 +417,12 @@ claspenv --help
   }
 
   console.log('Initialized configuration');
-}
+};
 
 /**
  * Initialize local configuration with script ID
  */
-async function localInit(): Promise<void> {
+const localInit = async (): Promise<void> => {
   // check if this is a clasp project
   if (!isClaspProject()) process.exit(1);
 
@@ -494,14 +494,14 @@ async function localInit(): Promise<void> {
   }
 
   console.log('Local configuration initialized successfully.');
-}
+};
 
 /**
  * Prompt user for input (async function to handle stdin)
  * @param question Question to ask user
  * @returns User input
  */
-async function promptUser(question: string): Promise<string> {
+const promptUser = async (question: string): Promise<string> => {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -513,17 +513,17 @@ async function promptUser(question: string): Promise<string> {
       resolve(answer);
     });
   });
-}
+};
 
 /**
  * Deploy function that handles deployment to environments
  * @param environment Environment to deploy to
  * @param configData Configuration data
  */
-async function deploy(
+const deploy = async (
   environment: string,
   configData: ConfigData,
-): Promise<void> {
+): Promise<void> => {
   // check if this is a clasp project
   if (!isClaspProject()) process.exit(1);
 
@@ -634,12 +634,12 @@ async function deploy(
   setClaspId(originalScriptId);
 
   console.log(`Completed deploy for ${environment} environment`);
-}
+};
 
 /**
  * Main function that handles command line arguments and executes appropriate actions
  */
-async function main(): Promise<void> {
+const main = async (): Promise<void> => {
   // Parse command line arguments using arg library
   const args = arg(
     {
@@ -829,7 +829,7 @@ or create a new one named 'claspenv-active' to use this utility.
 
     console.log(`Completed ${action} for ${environment} environment`);
   }
-}
+};
 
 // Run main function
 main().catch((error) => {
