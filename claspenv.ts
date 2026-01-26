@@ -545,95 +545,93 @@ const deploy = async (
 
   // Run clasp list-deployments to check current deployments
   console.log('Checking current deployments...');
-  try {
-    const listResult = child_process.spawnSync('clasp', ['list-deployments'], {
-      encoding: 'utf-8',
-    });
 
-    if (listResult.status !== 0) {
-      console.error(
-        `Error running clasp list-deployments: ${listResult.stderr}`,
-      );
-      setClaspId(originalScriptId);
-      process.exit(1);
-    }
+  const listResult = child_process.spawnSync('clasp', ['list-deployments'], {
+    encoding: 'utf-8',
+  });
 
-    // Parse the deployments output
-    const lines = listResult.stdout
-      .split('\n')
-      .filter((line) => line.trim() !== '');
+  if (!listResult || listResult.status !== 0) {
+    console.error(`Error running clasp list-deployments: ${listResult.stderr}`);
+    setClaspId(originalScriptId);
+    process.exit(1);
+  }
 
-    // if we have multiple deployments
-    if (lines?.length > 2) {
-      let activeDeploymentId = '';
-      for (const line of lines) {
-        if (line.includes('claspenv-active')) {
-          // Extract deployment ID from the line
-          const parts = line.split('-');
-          if (parts.length > 1) {
-            const idPart = parts[1]?.trim().split('@')[0]?.trim();
-            if (idPart) {
-              activeDeploymentId = idPart;
-              break;
-            }
+  // Parse the deployments output
+  const lines = listResult.stdout
+    .split('\n')
+    .filter((line) => line.trim() !== '');
+
+  // if we have multiple deployments
+  if (lines?.length > 2) {
+    let activeDeploymentId = '';
+
+    // Extract deployment ID from the line with the name claspenv-active
+    for (const line of lines) {
+      if (line.includes('claspenv-active')) {
+        const parts = line.split('-');
+        if (parts.length > 1) {
+          const idPart = parts[1]?.trim().split('@')[0]?.trim();
+          if (idPart) {
+            activeDeploymentId = idPart;
+            break;
           }
         }
       }
+    }
 
-      if (activeDeploymentId) {
-        console.log('Found active claspenv deployment, redeploying');
-        const redeployResult = child_process.spawnSync(
-          'clasp',
-          ['redeploy', '-d', 'claspenv-active', activeDeploymentId],
-          {
-            stdio: 'inherit',
-          },
-        );
-
-        if (redeployResult.status !== 0) {
-          console.error(
-            `Error running clasp redeploy: ${redeployResult.stderr}`,
-          );
-          setClaspId(originalScriptId);
-          console.log('Redeployment completed successfully');
-          process.exit(1);
-        }
-      }
-    } else if (lines?.length == 2 && lines[1]?.trim()?.endsWith('@HEAD')) {
-      console.log('No deployments found, creating new deployment...');
-      const deployResult = child_process.spawnSync(
+    // if we found an active deployment id
+    if (activeDeploymentId) {
+      console.log('Found active claspenv deployment, redeploying');
+      const redeployResult = child_process.spawnSync(
         'clasp',
-        ['deploy', '-d', 'claspenv-active'],
+        ['redeploy', '-d', 'claspenv-active', activeDeploymentId],
         {
           stdio: 'inherit',
         },
       );
 
-      if (deployResult.status !== 0) {
-        console.error(`Error running clasp deploy: ${deployResult.stderr}`);
+      if (redeployResult.status !== 0) {
+        console.error(`Error running clasp redeploy: ${redeployResult.stderr}`);
         setClaspId(originalScriptId);
-        console.log('Deployment completed successfully');
         process.exit(1);
       }
-    } else {
+
+      console.log(`Completed deploy for ${environment} environment`);
+    } else // if we have multiple deployments but we didn't find an active one
+    {
       setClaspId(originalScriptId);
+
       // Not creating a new deployment for claspenv if there are existing deployments that are not from claspenv
       // Since likely one of those is already the active, viewer facing deployment
       console.log(
         'Deployments found, but none from claspenv. Create or rename preferred deployment to "claspenv-active" to set deployment target.',
       );
+
       process.exit(1);
     }
-  } catch (error) {
-    console.error(`Error running clasp list-deployments: ${error}`);
-    setClaspId(originalScriptId);
-    process.exit(1);
+    // otherwise, if we don't have any existing deployments, create one
+  } else if (lines?.length == 2 && lines[1]?.trim()?.endsWith('@HEAD')) {
+    console.log('No deployments found, creating new deployment...');
+
+    const deployResult = child_process.spawnSync(
+      'clasp',
+      ['deploy', '-d', 'claspenv-active'],
+      {
+        stdio: 'inherit',
+      },
+    );
+
+    if (deployResult.status !== 0) {
+      console.error(`Error running clasp deploy: ${deployResult.stderr}`);
+      setClaspId(originalScriptId);
+      process.exit(1);
+    }
+
+    console.log(`Active deployment created for ${environment} environment`);
   }
 
   // Reset .clasp.json back to original scriptId (always run this cleanup)
   setClaspId(originalScriptId);
-
-  console.log(`Completed deploy for ${environment} environment`);
 };
 
 /**
@@ -649,6 +647,8 @@ const main = async (): Promise<void> => {
       '-h': '--help',
       '--version': Boolean,
       '-v': '--version',
+      '--pre-push': Boolean,
+      '-p': '--pre-push',
     },
     {
       permissive: true,
@@ -678,6 +678,7 @@ Actions:
   push            Push to environment
   pull            Pull from environment
   deploy          Deploy to environment
+                  add --pre-push, -p to push before deploy
 
 Environments:
   local           "Local" environment
@@ -793,6 +794,39 @@ or create a new one named 'claspenv-active' to use this utility.
 
   // Handle deploy action
   if (action === 'deploy') {
+    // Run push action if --pre-push or -p flag is provided
+    if (args['--pre-push']) {
+      console.log('Pushing to environment before deployment...');
+      console.log(
+        `Setting up for ${environment} environment scriptId: ${targetScriptId}`,
+      );
+
+      // Update .clasp.json with target scriptId
+      setClaspId(targetScriptId);
+
+      // Run the clasp push command
+      console.log('Running clasp push...');
+      try {
+        const result = child_process.spawnSync('clasp', ['push'], {
+          stdio: 'inherit',
+        });
+        if (result.status !== 0) {
+          console.error(`Error running clasp push: ${result.stderr}`);
+          process.exit(1);
+        }
+      } catch {
+        console.error(
+          "Error: clasp command not found. Please install clasp with 'npm install -g @google/clasp'",
+        );
+        process.exit(1);
+      }
+
+      // Reset .clasp.json back to original scriptId
+      setClaspId(originalScriptId);
+
+      console.log('Completed push for environment');
+    }
+
     // Run deploy function
     await deploy(environment, configData);
     return;
