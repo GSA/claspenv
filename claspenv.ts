@@ -37,7 +37,7 @@ const README_PATH = 'README.md';
 function isClaspProject(): boolean {
   if (!fs.existsSync(CLASP_CONFIG_PATH)) {
     console.error(
-      'Error: clasp configuration not found. This is not a clasp project. Please run this command in a clasp project directory.'
+      'Error: clasp configuration not found. This is not a clasp project. Please run this command in a clasp project directory.',
     );
     return false;
   }
@@ -78,7 +78,11 @@ function loadConfig(configFilePath: string): ConfigData {
  */
 function saveConfig(configFilePath: string, configData: ConfigData): void {
   try {
-    fs.writeFileSync(configFilePath, JSON.stringify(configData, null, 2), 'utf-8');
+    fs.writeFileSync(
+      configFilePath,
+      JSON.stringify(configData, null, 2),
+      'utf-8',
+    );
   } catch (error) {
     console.error(`Error saving config to ${configFilePath}:`, error);
     process.exit(1);
@@ -91,7 +95,10 @@ function saveConfig(configFilePath: string, configData: ConfigData): void {
  * @param configData Configuration data
  * @returns Script ID for the environment or empty string if not found
  */
-function getTargetScriptId(environment: string, configData: ConfigData): string {
+function getTargetScriptId(
+  environment: string,
+  configData: ConfigData,
+): string {
   const envConfig = configData[environment];
   return envConfig?.script_id || '';
 }
@@ -110,21 +117,20 @@ async function initConfigFiles(): Promise<void> {
     if (fs.existsSync('.git')) {
       isGitRepo = true;
     }
-  } catch (error) {
+  } catch {
     // Ignore errors
   }
 
   // Check for existing clasp configuration files
-  const configFiles = [
-    CLASPENV_CONFIG_PATH,
-    CLASPENV_LOCAL_CONFIG_PATH,
-  ];
+  const configFiles = [CLASPENV_CONFIG_PATH, CLASPENV_LOCAL_CONFIG_PATH];
 
-  const existingFiles = configFiles.filter(f => fs.existsSync(f));
+  const existingFiles = configFiles.filter((f) => fs.existsSync(f));
 
   if (existingFiles.length > 0) {
     console.log('Warning: Existing claspenv configuration files detected.');
-    const response = await promptUser('Do you want to overwrite previous configuration? (y/N): ');
+    const response = await promptUser(
+      'Do you want to overwrite previous configuration? (y/N): ',
+    );
     if (!response.toLowerCase().startsWith('y')) {
       console.log('Initialization cancelled.');
       process.exit(0);
@@ -143,7 +149,7 @@ async function initConfigFiles(): Promise<void> {
   // Create the local example file
   const exampleConfig = {
     local: {
-      script_id: `Put the id for your \'local\' version of the apps script project here and rename to ${CLASPENV_LOCAL_CONFIG_PATH}`,
+      script_id: `Put the id for your 'local' version of the apps script project here and rename to ${CLASPENV_LOCAL_CONFIG_PATH}`,
     },
   };
 
@@ -185,27 +191,37 @@ async function initConfigFiles(): Promise<void> {
             }
           }
         }
-      } catch (error) {
-        console.log('Problem with git when getting remote branches')
+      } catch {
+        console.log('Problem with git when getting remote branches');
       }
 
       // Check which required branches are missing
-      const missingBranches = requiredBranches.filter(b => !existingBranches.includes(b));
+      const missingBranches = requiredBranches.filter(
+        (b) => !existingBranches.includes(b),
+      );
 
       if (missingBranches.length > 0) {
         console.log(`Missing branches: ${missingBranches.join(', ')}`);
-        const response = await promptUser('Do you want to create these branches? (y/N): ');
+        const response = await promptUser(
+          'Do you want to create these branches? (y/N): ',
+        );
         if (response.toLowerCase().startsWith('y')) {
           for (const branch of missingBranches) {
             console.log(`Creating branch: ${branch}`);
             try {
-              const result = child_process.spawnSync('git', ['checkout', '-b', branch], {
-                encoding: 'utf-8',
-              });
+              const result = child_process.spawnSync(
+                'git',
+                ['checkout', '-b', branch],
+                {
+                  encoding: 'utf-8',
+                },
+              );
               if (result.status === 0) {
                 console.log(`Branch '${branch}' created successfully`);
               } else {
-                console.error(`Error creating branch '${branch}': ${result.stderr}`);
+                console.error(
+                  `Error creating branch '${branch}': ${result.stderr}`,
+                );
               }
             } catch (error) {
               console.error(`Error creating branch '${branch}': ${error}`);
@@ -218,15 +234,19 @@ async function initConfigFiles(): Promise<void> {
             const result = child_process.spawnSync(
               'git',
               ['push', '--set-upstream', 'origin', 'dev', 'stage', 'prod'],
-              { encoding: 'utf-8' }
+              { encoding: 'utf-8' },
             );
             if (result.status === 0) {
               console.log('Branches pushed to remote successfully');
             } else {
-              console.error(`Warning: Could not push branches to remote: ${result.stderr}`);
+              console.error(
+                `Warning: Could not push branches to remote: ${result.stderr}`,
+              );
             }
           } catch (error) {
-            console.error(`Warning: Could not push branches to remote: ${error}`);
+            console.error(
+              `Warning: Could not push branches to remote: ${error}`,
+            );
           }
         } else {
           console.log('Branch creation cancelled.');
@@ -270,7 +290,9 @@ async function initConfigFiles(): Promise<void> {
     // Check if README.md exists, if not, ask user if they want to create one
     const readmeExists = fs.existsSync(README_PATH);
     if (!readmeExists) {
-      const response = await promptUser('Do you want to create a basic README.md file? (y/N): ');
+      const response = await promptUser(
+        'Do you want to create a basic README.md file? (y/N): ',
+      );
       if (response.toLowerCase().startsWith('y')) {
         const basicReadmeContent = `# Project Name
 
@@ -325,7 +347,9 @@ claspenv --help
     }
 
     // Ask user if they want to make a configuration commit
-    const response = await promptUser('Do you want to make a configuration commit? (y/N): ');
+    const response = await promptUser(
+      'Do you want to make a configuration commit? (y/N): ',
+    );
     if (response.toLowerCase().startsWith('y')) {
       try {
         // Switch to dev branch
@@ -342,9 +366,13 @@ claspenv --help
 
         // Add configuration file
         console.log('Adding configuration file to commit...');
-        const addResult = child_process.spawnSync('git', ['add', CLASPENV_CONFIG_PATH], {
-          encoding: 'utf-8',
-        });
+        const addResult = child_process.spawnSync(
+          'git',
+          ['add', CLASPENV_CONFIG_PATH],
+          {
+            encoding: 'utf-8',
+          },
+        );
         if (addResult.status !== 0) {
           console.error(`Error adding file: ${addResult.stderr}`);
           process.exit(1);
@@ -356,7 +384,7 @@ claspenv --help
         const commitResult = child_process.spawnSync(
           'git',
           ['commit', '--allow-empty', '-m', commitMessage],
-          { encoding: 'utf-8' }
+          { encoding: 'utf-8' },
         );
         if (commitResult.status === 0) {
           console.log('Configuration commit created successfully.');
@@ -367,9 +395,13 @@ claspenv --help
 
         // Push to remote
         console.log('Pushing to remote repository...');
-        const pushResult = child_process.spawnSync('git', ['push', 'origin', 'dev'], {
-          encoding: 'utf-8',
-        });
+        const pushResult = child_process.spawnSync(
+          'git',
+          ['push', 'origin', 'dev'],
+          {
+            encoding: 'utf-8',
+          },
+        );
         if (pushResult.status === 0) {
           console.log('Configuration pushed to remote successfully.');
         } else {
@@ -384,9 +416,7 @@ claspenv --help
     }
   }
 
-  console.log(
-    "Initialized configuration"
-  );
+  console.log('Initialized configuration');
 }
 
 /**
@@ -399,13 +429,15 @@ async function localInit(): Promise<void> {
   // Check if the example config file exists
   if (!fs.existsSync(CLASPENV_EXAMPLE_CONFIG_PATH)) {
     console.error(
-      'Error: Initial configuration files not found. Please run \'claspenv --init\' first to create them.'
+      "Error: Initial configuration files not found. Please run 'claspenv --init' first to create them.",
     );
     process.exit(1);
   }
 
   // Ask user for the local script ID
-  const scriptId = await promptUser('Enter the script ID for your local project: ');
+  const scriptId = await promptUser(
+    'Enter the script ID for your local project: ',
+  );
   if (!scriptId) {
     console.error('Error: Script ID cannot be empty.');
     process.exit(1);
@@ -414,7 +446,9 @@ async function localInit(): Promise<void> {
   // Copy the example config file to the local config file
   try {
     fs.copySync(CLASPENV_EXAMPLE_CONFIG_PATH, CLASPENV_LOCAL_CONFIG_PATH);
-    console.log(`Copied ${CLASPENV_EXAMPLE_CONFIG_PATH} to ${CLASPENV_LOCAL_CONFIG_PATH}`);
+    console.log(
+      `Copied ${CLASPENV_EXAMPLE_CONFIG_PATH} to ${CLASPENV_LOCAL_CONFIG_PATH}`,
+    );
   } catch (error) {
     console.error(`Error copying example config file: ${error}`);
     process.exit(1);
@@ -423,7 +457,7 @@ async function localInit(): Promise<void> {
   // Update the local script ID in the copied config file
   try {
     // Load the config file
-    let configData = loadConfig(CLASPENV_LOCAL_CONFIG_PATH);
+    const configData = loadConfig(CLASPENV_LOCAL_CONFIG_PATH);
 
     // Update the local script ID
     const localConfig = configData['local'] || { script_id: '' };
@@ -444,12 +478,18 @@ async function localInit(): Promise<void> {
     const gitignoreContent = fs.readFileSync(GITIGNORE_PATH, 'utf-8');
 
     if (!gitignoreContent.includes(CLASPENV_LOCAL_CONFIG_PATH)) {
-      fs.appendFileSync(GITIGNORE_PATH, `\n# Clasp Local Environment Files\n${CLASPENV_LOCAL_CONFIG_PATH}\n`);
+      fs.appendFileSync(
+        GITIGNORE_PATH,
+        `\n# Clasp Local Environment Files\n${CLASPENV_LOCAL_CONFIG_PATH}\n`,
+      );
       console.log('Updated .gitignore with local config file');
     }
   } else {
     // Create .gitignore file if it doesn't exist
-    fs.writeFileSync(GITIGNORE_PATH, `# Clasp Local Environment Files\n${CLASPENV_LOCAL_CONFIG_PATH}\n`);
+    fs.writeFileSync(
+      GITIGNORE_PATH,
+      `# Clasp Local Environment Files\n${CLASPENV_LOCAL_CONFIG_PATH}\n`,
+    );
     console.log('Created .gitignore with local config file');
   }
 
@@ -480,7 +520,10 @@ async function promptUser(question: string): Promise<string> {
  * @param environment Environment to deploy to
  * @param configData Configuration data
  */
-async function deploy(environment: string, configData: ConfigData): Promise<void> {
+async function deploy(
+  environment: string,
+  configData: ConfigData,
+): Promise<void> {
   // check if this is a clasp project
   if (!isClaspProject()) process.exit(1);
 
@@ -508,13 +551,17 @@ async function deploy(environment: string, configData: ConfigData): Promise<void
     });
 
     if (listResult.status !== 0) {
-      console.error(`Error running clasp list-deployments: ${listResult.stderr}`);
+      console.error(
+        `Error running clasp list-deployments: ${listResult.stderr}`,
+      );
       setClaspId(originalScriptId);
       process.exit(1);
     }
 
     // Parse the deployments output
-    const lines = listResult.stdout.split('\n').filter(line => line.trim() !== '');
+    const lines = listResult.stdout
+      .split('\n')
+      .filter((line) => line.trim() !== '');
 
     // if we have multiple deployments
     if (lines?.length > 2) {
@@ -535,12 +582,18 @@ async function deploy(environment: string, configData: ConfigData): Promise<void
 
       if (activeDeploymentId) {
         console.log('Found active claspenv deployment, redeploying');
-        const redeployResult = child_process.spawnSync('clasp', ['redeploy', '-d', 'claspenv-active', activeDeploymentId], {
-          stdio: 'inherit',
-        });
+        const redeployResult = child_process.spawnSync(
+          'clasp',
+          ['redeploy', '-d', 'claspenv-active', activeDeploymentId],
+          {
+            stdio: 'inherit',
+          },
+        );
 
         if (redeployResult.status !== 0) {
-          console.error(`Error running clasp redeploy: ${redeployResult.stderr}`);
+          console.error(
+            `Error running clasp redeploy: ${redeployResult.stderr}`,
+          );
           setClaspId(originalScriptId);
           console.log('Redeployment completed successfully');
           process.exit(1);
@@ -548,9 +601,13 @@ async function deploy(environment: string, configData: ConfigData): Promise<void
       }
     } else if (lines?.length == 2 && lines[1]?.trim()?.endsWith('@HEAD')) {
       console.log('No deployments found, creating new deployment...');
-      const deployResult = child_process.spawnSync('clasp', ['deploy', '-d', 'claspenv-active'], {
-        stdio: 'inherit',
-      });
+      const deployResult = child_process.spawnSync(
+        'clasp',
+        ['deploy', '-d', 'claspenv-active'],
+        {
+          stdio: 'inherit',
+        },
+      );
 
       if (deployResult.status !== 0) {
         console.error(`Error running clasp deploy: ${deployResult.stderr}`);
@@ -562,7 +619,9 @@ async function deploy(environment: string, configData: ConfigData): Promise<void
       setClaspId(originalScriptId);
       // Not creating a new deployment for claspenv if there are existing deployments that are not from claspenv
       // Since likely one of those is already the active, viewer facing deployment
-      console.log('Deployments found, but none from claspenv. Create or rename preferred deployment to "claspenv-active" to set deployment target.');
+      console.log(
+        'Deployments found, but none from claspenv. Create or rename preferred deployment to "claspenv-active" to set deployment target.',
+      );
       process.exit(1);
     }
   } catch (error) {
@@ -582,16 +641,19 @@ async function deploy(environment: string, configData: ConfigData): Promise<void
  */
 async function main(): Promise<void> {
   // Parse command line arguments using arg library
-  const args = arg({
-    '--init': Boolean,
-    '--local-init': Boolean,
-    '--help': Boolean,
-    '-h': '--help',
-    '--version': Boolean,
-    '-v': '--version',
-  }, {
-    permissive: true,
-  });
+  const args = arg(
+    {
+      '--init': Boolean,
+      '--local-init': Boolean,
+      '--help': Boolean,
+      '-h': '--help',
+      '--version': Boolean,
+      '-v': '--version',
+    },
+    {
+      permissive: true,
+    },
+  );
 
   // Handle version flag
   if (args['--version']) {
@@ -671,7 +733,9 @@ or create a new one named 'claspenv-active' to use this utility.
 
   // Validate environment
   if (!['local', 'dev', 'stage', 'prod'].includes(environment)) {
-    console.error("Error: Environment must be 'local', 'dev', 'stage', or 'prod'");
+    console.error(
+      "Error: Environment must be 'local', 'dev', 'stage', or 'prod'",
+    );
     process.exit(1);
   }
 
@@ -699,7 +763,7 @@ or create a new one named 'claspenv-active' to use this utility.
   // If no config files found, warn the user
   if (Object.keys(configData).length === 0) {
     console.error(
-      'Warning: No configuration files found. Please run \'claspenv --init\' to create them.'
+      "Warning: No configuration files found. Please run 'claspenv --init' to create them.",
     );
     process.exit(1);
   }
@@ -714,9 +778,12 @@ or create a new one named 'claspenv-active' to use this utility.
 
   // Add confirmation for dev, stage, and prod environments on push actions only
   let shouldContinue = true;
-  if (['dev', 'stage', 'prod'].includes(environment) && ['push', 'deploy'].includes(action)) {
+  if (
+    ['dev', 'stage', 'prod'].includes(environment) &&
+    ['push', 'deploy'].includes(action)
+  ) {
     const confirmation = await promptUser(
-      `Are you sure you want to ${action} to the ${environment} environment? (y/N): `
+      `Are you sure you want to ${action} to the ${environment} environment? (y/N): `,
     );
     if (!confirmation.toLowerCase().startsWith('y')) {
       console.log(`Cancelled ${action} to ${environment} environment.`);
@@ -734,7 +801,7 @@ or create a new one named 'claspenv-active' to use this utility.
   // Only proceed with changes and clasp command if we should continue
   if (shouldContinue) {
     console.log(
-      `Setting up for ${environment} environment scriptId: ${targetScriptId}`
+      `Setting up for ${environment} environment scriptId: ${targetScriptId}`,
     );
 
     // Update .clasp.json with target scriptId only if user confirmed
@@ -750,8 +817,10 @@ or create a new one named 'claspenv-active' to use this utility.
         console.error(`Error running clasp ${action}: ${result.stderr}`);
         process.exit(1);
       }
-    } catch (error) {
-      console.error('Error: clasp command not found. Please install clasp with \'npm install -g @google/clasp\'');
+    } catch {
+      console.error(
+        "Error: clasp command not found. Please install clasp with 'npm install -g @google/clasp'",
+      );
       process.exit(1);
     }
 
