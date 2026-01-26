@@ -125,10 +125,17 @@ When `stage` is approved, merge `stage` into `prod` and create a release branch 
 
 To keep URL consistency, this utility targets a deployment named `claspenv-active`. That way the URL will not change on redeployment.
 
-To deploy to an environment, use the following format:
+To deploy to an environment, use `deploy` in the following format:
 
 ```bash
 claspenv deploy <environment>
+```
+
+To push the current branch and deploy to an environment in a single command, use `deploy --pre-push` or `deploy -p` in the following format:
+
+```bash
+claspenv deploy --pre-push <environment>
+claspenv deploy -p <environment>
 ```
 
 If no deployments exist, a deployment named `claspenv-active` will be created.
