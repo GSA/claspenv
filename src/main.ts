@@ -572,7 +572,7 @@ export const deploy = async (
     // Extract deployment ID from the line with the name claspenv-active
     for (const line of lines) {
       if (line.includes('claspenv-active')) {
-        const parts = line.split('-');
+        const parts = line.split(' ');
         if (parts.length > 1) {
           const idPart = parts[1]?.trim().split('@')[0]?.trim();
           if (idPart) {
