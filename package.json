@@ -2,15 +2,15 @@
   "name": "claspenv",
   "version": "0.1.0",
   "description": "A command-line utility for managing Google Apps Script Project environments",
-  "main": "dist/claspenv.js",
+  "main": "dist/src/main.js",
   "private": "true",
   "bin": {
-    "claspenv": "dist/claspenv.js"
+    "claspenv": "dist/src/main.js"
   },
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "dev": "ts-node claspenv.ts",
+    "dev": "ts-node src/main.ts",
     "test": "jest",
     "test:watch": "jest --watch"
   },

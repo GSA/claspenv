@@ -4,7 +4,7 @@ import {
   loadConfig,
   saveConfig,
   isClaspProject,
-} from '../claspenv';
+} from '../src/main';
 
 // Mock fs-extra to avoid file system operations during tests
 jest.mock('fs-extra');
