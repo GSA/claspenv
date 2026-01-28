@@ -574,7 +574,7 @@ export const deploy = async (
       if (line.includes('claspenv-active')) {
         const parts = line.split(' ');
         if (parts.length > 1) {
-          const idPart = parts[1]?.trim().split('@')[0]?.trim();
+          const idPart = parts[1];
           if (idPart) {
             activeDeploymentId = idPart;
             break;
