@@ -22,19 +22,20 @@ type ClaspData = {
   scriptId?: string;
 };
 
-// Constants
-const CLASP_CONFIG_PATH = '.clasp.json';
-const CLASPENV_CONFIG_PATH = '.claspenv.config.json';
-const CLASPENV_LOCAL_CONFIG_PATH = '.claspenv.config.local.json';
-const CLASPENV_EXAMPLE_CONFIG_PATH = '.claspenv.config.local.example.json';
-const CLASPIGNORE_PATH = '.claspignore';
-const GITIGNORE_PATH = '.gitignore';
-const README_PATH = 'README.md';
+// Constants, exported for unit testing
+export const CLASP_CONFIG_PATH = '.clasp.json';
+export const CLASPENV_CONFIG_PATH = '.claspenv.config.json';
+export const CLASPENV_LOCAL_CONFIG_PATH = '.claspenv.config.local.json';
+export const CLASPENV_EXAMPLE_CONFIG_PATH =
+  '.claspenv.config.local.example.json';
+export const CLASPIGNORE_PATH = '.claspignore';
+export const GITIGNORE_PATH = '.gitignore';
+export const README_PATH = 'README.md';
 
 /**
  * Check if this is a clasp project by verifying .clasp.json exists
  */
-const isClaspProject = (): boolean => {
+export const isClaspProject = (): boolean => {
   if (!fs.existsSync(CLASP_CONFIG_PATH)) {
     console.error(
       'Error: clasp configuration not found. This is not a clasp project. Please run this command in a clasp project directory.',
@@ -47,7 +48,7 @@ const isClaspProject = (): boolean => {
  * set the script id in .clasp.json
  * @param targetScriptId Script to change to
  */
-const setClaspId = (targetScriptId: string): void => {
+export const setClaspId = (targetScriptId: string): void => {
   const claspConfig = fs.readJSONSync(CLASP_CONFIG_PATH);
   claspConfig.scriptId = targetScriptId;
   fs.writeJSONSync(CLASP_CONFIG_PATH, claspConfig, { spaces: 2 });
@@ -58,7 +59,7 @@ const setClaspId = (targetScriptId: string): void => {
  * @param configFilePath Path to the configuration file
  * @returns Configuration data or empty object if file doesn't exist
  */
-const loadConfig = (configFilePath: string): ConfigData => {
+export const loadConfig = (configFilePath: string): ConfigData => {
   try {
     if (!fs.existsSync(configFilePath)) {
       return {};
@@ -76,7 +77,10 @@ const loadConfig = (configFilePath: string): ConfigData => {
  * @param configFilePath Path to the configuration file
  * @param configData Configuration data to save
  */
-const saveConfig = (configFilePath: string, configData: ConfigData): void => {
+export const saveConfig = (
+  configFilePath: string,
+  configData: ConfigData,
+): void => {
   try {
     fs.writeFileSync(
       configFilePath,
@@ -95,7 +99,7 @@ const saveConfig = (configFilePath: string, configData: ConfigData): void => {
  * @param configData Configuration data
  * @returns Script ID for the environment or empty string if not found
  */
-const getTargetScriptId = (
+export const getTargetScriptId = (
   environment: string,
   configData: ConfigData,
 ): string => {
@@ -501,7 +505,7 @@ const localInit = async (): Promise<void> => {
  * @param question Question to ask user
  * @returns User input
  */
-const promptUser = async (question: string): Promise<string> => {
+export const promptUser = async (question: string): Promise<string> => {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -520,7 +524,7 @@ const promptUser = async (question: string): Promise<string> => {
  * @param environment Environment to deploy to
  * @param configData Configuration data
  */
-const deploy = async (
+export const deploy = async (
   environment: string,
   configData: ConfigData,
 ): Promise<void> => {
@@ -865,8 +869,10 @@ or create a new one named 'claspenv-active' to use this utility.
   }
 };
 
-// Run main function
-main().catch((error) => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
+// Run main function if we're not running the test framework
+if (typeof process.env['JEST_WORKER_ID'] === 'undefined') {
+  main().catch((error) => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
+}
