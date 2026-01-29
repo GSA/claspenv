@@ -682,6 +682,8 @@ const main = async (): Promise<void> => {
       '-v': '--version',
       '--pre-push': Boolean,
       '-p': '--pre-push',
+      '--open-after': Boolean,
+      '-o': '--open-after',
     },
     {
       permissive: true,
@@ -711,7 +713,8 @@ Options:
   push            Push to environment
   pull            Pull from environment
   deploy          Deploy to environment
-                  add --pre-push, -p to push before deploy
+                  --pre-push, -p to push before deploy
+                  --open-after, -o to open after deploy
   open            Open deployed application in browser
 
 Environments:
@@ -726,6 +729,7 @@ Examples:
   claspenv pull dev
   claspenv push prod
   claspenv deploy stage
+  claspenv deploy -p -o local
 
 Note on Deployment:
 Deployments will be pushed to the environment's 'active' deployment named 'claspenv-active'.
@@ -860,6 +864,14 @@ and archive the existing 'claspenv-active' deployment.
       const deploymentSuccessful = await deploy(environment);
       if (!deploymentSuccessful) {
         process.exit(1);
+      }
+
+      if (args['--open-after']) {
+        // Run open web app function
+        const openSuccessful = await openActiveDeployment(environment);
+        if (!openSuccessful) {
+          process.exit(1);
+        }
       }
     }
 

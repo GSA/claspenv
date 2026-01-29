@@ -138,6 +138,22 @@ claspenv deploy --pre-push <environment>
 claspenv deploy -p <environment>
 ```
 
+A project's active deployment can also be opened after deployment with the `--open-after` or `-o` flag:
+
+```bash
+claspenv deploy --open-after <environment>
+claspenv deploy -o <environment>
+```
+
+These can be combined to push, deploy, and open the updated application in a single command:
+
+```bash
+claspenv deploy --pre-push --open-after <environment>
+claspenv deploy -o -p <environment>
+```
+
+### Notes on Deployment
+
 If no deployments exist, a deployment named `claspenv-active` will be created.
 
 If a deployment named `claspenv-active` exists, it will be redeployed with the currently pushed code. NOTE: This is not the current code on the developer's machine or in the current git branch. The desired environment's updated code must be pushed with `claspenv push <environment>` first.
