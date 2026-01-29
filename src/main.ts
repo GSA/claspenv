@@ -617,10 +617,6 @@ const openActiveDeployment = async (environment: string): Promise<Boolean> => {
     return false;
   }
 
-  console.log(
-    `Opening deployed application for ${environment} environment with deployment ID: ${activeDeploymentId}`,
-  );
-
   // Run clasp open-web-app with the deployment ID
   try {
     const result = child_process.spawnSync(
@@ -843,6 +839,7 @@ and archive the existing 'claspenv-active' deployment.
       // Run open web app function
       const openSuccessful = await openActiveDeployment(environment);
       if (!openSuccessful) {
+        setClaspId(originalScriptId);
         process.exit(1);
       }
     }
@@ -853,8 +850,9 @@ and archive the existing 'claspenv-active' deployment.
       if (args['--pre-push']) {
         console.log('Pushing to environment before deployment...');
 
-        const commandSuccessful = runClaspAction('push');
-        if (!commandSuccessful) {
+        const actionSuccessful = runClaspAction('push');
+        if (!actionSuccessful) {
+          setClaspId(originalScriptId);
           process.exit(1);
         }
         console.log(`Completed push for ${environment} environment`);
@@ -863,6 +861,7 @@ and archive the existing 'claspenv-active' deployment.
       // Run deploy function
       const deploymentSuccessful = await deploy(environment);
       if (!deploymentSuccessful) {
+        setClaspId(originalScriptId);
         process.exit(1);
       }
 
@@ -870,6 +869,7 @@ and archive the existing 'claspenv-active' deployment.
         // Run open web app function
         const openSuccessful = await openActiveDeployment(environment);
         if (!openSuccessful) {
+          setClaspId(originalScriptId);
           process.exit(1);
         }
       }
@@ -877,8 +877,9 @@ and archive the existing 'claspenv-active' deployment.
 
     // Run the clasp command for pull and push actions
     if (['push', 'pull'].includes(action)) {
-      const commandSuccessful = runClaspAction(action);
-      if (!commandSuccessful) {
+      const actionSuccessful = runClaspAction(action);
+      if (!actionSuccessful) {
+        setClaspId(originalScriptId);
         process.exit(1);
       }
     }
