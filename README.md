@@ -144,6 +144,14 @@ If a deployment named `claspenv-active` exists, it will be redeployed with the c
 
 If deployments exist, but none of them are named `claspenv-active`, a new `claspenv-active` will be created. If you have a currently viewer-facing deployment you would rather use, rename it `claspenv-active` and archive or rename the current `claspenv-active` deployment.
 
+## Opening/Testing Active Deployments
+
+To test an active deployment in your default browser, run:
+
+```bash
+claspenv open <environment>
+```
+
 ## Manual Procedures
 
 ### Manually Configure Environments
@@ -183,9 +191,17 @@ claspenv pull dev
 # Push to prod environment
 claspenv push prod
 
-# Initialize configuration
+# Open deployed application
+claspenv open prod
+
+# Open deployed application for dev environment
+claspenv open dev
+
+# Initialize project configuration
 claspenv --init
-```
+
+# Initialize local user configuration
+claspenv --local-init
 
 ## Requirements
 

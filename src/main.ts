@@ -44,11 +44,12 @@ export const isClaspProject = (): boolean => {
   }
   return true;
 };
+
 /**
  * set the script id in .clasp.json
  * @param targetScriptId Script to change to
  */
-export const setClaspId = (targetScriptId: string): void => {
+const setClaspId = (targetScriptId: string): void => {
   const claspConfig = fs.readJSONSync(CLASP_CONFIG_PATH);
   claspConfig.scriptId = targetScriptId;
   fs.writeJSONSync(CLASP_CONFIG_PATH, claspConfig, { spaces: 2 });
@@ -94,7 +95,7 @@ export const saveConfig = (
 };
 
 /**
- * Get the target script ID based on environment
+ * Get the target script ID from config data based on environment
  * @param environment Environment name (local, dev, stage, prod)
  * @param configData Configuration data
  * @returns Script ID for the environment or empty string if not found
@@ -536,7 +537,7 @@ const localInit = async (): Promise<void> => {
  * @param question Question to ask user
  * @returns User input
  */
-export const promptUser = async (question: string): Promise<string> => {
+const promptUser = async (question: string): Promise<string> => {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -553,31 +554,8 @@ export const promptUser = async (question: string): Promise<string> => {
 /**
  * Deploy function that handles deployment to environments
  * @param environment Environment to deploy to
- * @param configData Configuration data
  */
-export const deploy = async (
-  environment: string,
-  configData: ConfigData,
-): Promise<void> => {
-  // check if this is a clasp project
-  if (!isClaspProject()) process.exit(1);
-
-  const claspData: ClaspData = fs.readJSONSync(CLASP_CONFIG_PATH);
-
-  // Store original script id
-  const originalScriptId = claspData.scriptId || '';
-
-  // Get the target scriptId based on environment
-  const targetScriptId = getTargetScriptId(environment, configData);
-
-  if (!targetScriptId) {
-    console.error(`Error: No scriptId found for ${environment} environment`);
-    process.exit(1);
-  }
-
-  // Update .clasp.json with target scriptId
-  setClaspId(targetScriptId);
-
+const deploy = async (environment: string): Promise<Boolean> => {
   const activeDeploymentId = getActiveDeploymentId();
 
   // if we have an active deployment id, redeploy to it
@@ -593,11 +571,8 @@ export const deploy = async (
 
     if (redeployResult.status !== 0) {
       console.error(`Error running clasp redeploy: ${redeployResult.stderr}`);
-      setClaspId(originalScriptId);
-      process.exit(1);
+      return false;
     }
-
-    console.log(`Completed deploy for ${environment} environment`);
   } else {
     // otherwise, create a new active deployment
     console.log(
@@ -614,8 +589,7 @@ export const deploy = async (
 
     if (deployResult.status !== 0) {
       console.error(`Error running clasp deploy: ${deployResult.stderr}`);
-      setClaspId(originalScriptId);
-      process.exit(1);
+      return false;
     }
 
     console.log(
@@ -625,8 +599,72 @@ export const deploy = async (
     );
   }
 
-  // Reset .clasp.json back to original scriptId (always run this cleanup)
-  setClaspId(originalScriptId);
+  return true;
+};
+
+/**
+ * Open the actively deployed Google Apps Script application in a browser
+ * @param environment Environment to open
+ */
+const openActiveDeployment = async (environment: string): Promise<Boolean> => {
+  // Get the active deployment ID
+  const activeDeploymentId = getActiveDeploymentId();
+
+  if (!activeDeploymentId) {
+    console.error(
+      `Error: No active deployment found for ${environment} environment`,
+    );
+    return false;
+  }
+
+  console.log(
+    `Opening deployed application for ${environment} environment with deployment ID: ${activeDeploymentId}`,
+  );
+
+  // Run clasp open-web-app with the deployment ID
+  try {
+    const result = child_process.spawnSync(
+      'clasp',
+      ['open-web-app', activeDeploymentId],
+      {
+        stdio: 'inherit',
+      },
+    );
+    if (result.status !== 0) {
+      console.error(`Error running clasp open-web-app: ${result.stderr}`);
+      return false;
+    }
+  } catch {
+    console.error(
+      "Error: clasp command not found. Please install clasp with 'npm install -g @google/clasp'",
+    );
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * Run the specified clasp action
+ * @param action Action to perform
+ */
+const runClaspAction = (action: string): Boolean => {
+  console.log(`Running clasp ${action}...`);
+  try {
+    const result = child_process.spawnSync('clasp', [action], {
+      stdio: 'inherit',
+    });
+    if (result.status !== 0) {
+      console.error(`Error running clasp ${action}: ${result.stderr}`);
+      return false;
+    }
+  } catch {
+    console.error(
+      "Error: clasp command not found. Please install clasp with 'npm install -g @google/clasp'",
+    );
+    return false;
+  }
+  return true;
 };
 
 /**
@@ -669,11 +707,12 @@ Options:
   --help, -h      Show this help message
   --version, -v   Show version
 
-Actions:
+  Actions:
   push            Push to environment
   pull            Pull from environment
   deploy          Deploy to environment
                   add --pre-push, -p to push before deploy
+  open            Open deployed application in browser
 
 Environments:
   local           "Local" environment
@@ -721,8 +760,8 @@ and archive the existing 'claspenv-active' deployment.
   }
 
   // Validate action
-  if (action !== 'push' && action !== 'pull' && action !== 'deploy') {
-    console.error("Error: Action must be 'push', 'pull', or 'deploy'");
+  if (!['push', 'pull', 'deploy', 'open'].includes(action)) {
+    console.error("Error: Action must be 'push', 'pull', 'deploy', or 'open'");
     process.exit(1);
   }
 
@@ -786,70 +825,50 @@ and archive the existing 'claspenv-active' deployment.
     }
   }
 
-  // Handle deploy action
-  if (action === 'deploy') {
-    // Run push action if --pre-push or -p flag is provided
-    if (args['--pre-push']) {
-      console.log('Pushing to environment before deployment...');
-      console.log(
-        `Setting up for ${environment} environment scriptId: ${targetScriptId}`,
-      );
-
-      // Update .clasp.json with target scriptId
-      setClaspId(targetScriptId);
-
-      // Run the clasp push command
-      console.log('Running clasp push...');
-      try {
-        const result = child_process.spawnSync('clasp', ['push'], {
-          stdio: 'inherit',
-        });
-        if (result.status !== 0) {
-          console.error(`Error running clasp push: ${result.stderr}`);
-          process.exit(1);
-        }
-      } catch {
-        console.error(
-          "Error: clasp command not found. Please install clasp with 'npm install -g @google/clasp'",
-        );
-        process.exit(1);
-      }
-
-      // Reset .clasp.json back to original scriptId
-      setClaspId(originalScriptId);
-
-      console.log('Completed push for environment');
-    }
-
-    // Run deploy function
-    await deploy(environment, configData);
-    return;
-  }
-
   // Only proceed with changes and clasp command if we should continue
   if (shouldContinue) {
     console.log(
       `Setting up for ${environment} environment scriptId: ${targetScriptId}`,
     );
 
-    // Update .clasp.json with target scriptId only if user confirmed
+    // Update .clasp.json with target scriptId
     setClaspId(targetScriptId);
 
-    // Run the clasp command
-    console.log(`Running clasp ${action}...`);
-    try {
-      const result = child_process.spawnSync('clasp', [action], {
-        stdio: 'inherit',
-      });
-      if (result.status !== 0) {
-        console.error(`Error running clasp ${action}: ${result.stderr}`);
+    // Handle open action
+    if (action === 'open') {
+      // Run open web app function
+      const openSuccessful = await openActiveDeployment(environment);
+      if (!openSuccessful) {
         process.exit(1);
       }
-    } catch {
-      console.error(
-        "Error: clasp command not found. Please install clasp with 'npm install -g @google/clasp'",
-      );
-      process.exit(1);
+    }
+
+    // Handle deploy action
+    if (action === 'deploy') {
+      // Run push action if --pre-push or -p flag is provided
+      if (args['--pre-push']) {
+        console.log('Pushing to environment before deployment...');
+
+        const commandSuccessful = runClaspAction('push');
+        if (!commandSuccessful) {
+          process.exit(1);
+        }
+        console.log(`Completed push for ${environment} environment`);
+      }
+
+      // Run deploy function
+      const deploymentSuccessful = await deploy(environment);
+      if (!deploymentSuccessful) {
+        process.exit(1);
+      }
+    }
+
+    // Run the clasp command for pull and push actions
+    if (['push', 'pull'].includes(action)) {
+      const commandSuccessful = runClaspAction(action);
+      if (!commandSuccessful) {
+        process.exit(1);
+      }
     }
 
     // Reset .clasp.json back to original scriptId (always run this cleanup)
