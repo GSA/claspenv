@@ -108,6 +108,37 @@ export const getTargetScriptId = (
 };
 
 /**
+ * Get the active deployment ID for the currently set environment
+ * @returns Deployment ID for the environment or null if not found
+ */
+const getActiveDeploymentId = (): string | null => {
+  // Run clasp list-deployments to check current deployments
+  console.log('Checking current deployments...');
+
+  const listResult = child_process.spawnSync('clasp', ['list-deployments'], {
+    encoding: 'utf-8',
+  });
+
+  if (!listResult || listResult.status !== 0) {
+    console.error(`Error running clasp list-deployments: ${listResult.stderr}`);
+    return null;
+  }
+
+  // Parse the deployments output
+  const lines = listResult.stdout
+    .split('\n')
+    .filter((line) => line.trim() !== '');
+
+  // Extract deployment ID from the line with the name claspenv-active
+  const activeDeploymentId = lines
+    .filter((line) => line?.includes('claspenv-active'))?.[0]
+    ?.split(' ')?.[1]
+    ?.trim();
+
+  return activeDeploymentId || null;
+};
+
+/**
  * Initialize the configuration files with blank values
  */
 const initConfigFiles = async (): Promise<void> => {
@@ -547,75 +578,31 @@ export const deploy = async (
   // Update .clasp.json with target scriptId
   setClaspId(targetScriptId);
 
-  // Run clasp list-deployments to check current deployments
-  console.log('Checking current deployments...');
+  const activeDeploymentId = getActiveDeploymentId();
 
-  const listResult = child_process.spawnSync('clasp', ['list-deployments'], {
-    encoding: 'utf-8',
-  });
+  // if we have an active deployment id, redeploy to it
+  if (activeDeploymentId) {
+    console.log('Found active claspenv deployment, redeploying');
+    const redeployResult = child_process.spawnSync(
+      'clasp',
+      ['redeploy', '-d', 'claspenv-active', activeDeploymentId],
+      {
+        stdio: 'inherit',
+      },
+    );
 
-  if (!listResult || listResult.status !== 0) {
-    console.error(`Error running clasp list-deployments: ${listResult.stderr}`);
-    setClaspId(originalScriptId);
-    process.exit(1);
-  }
-
-  // Parse the deployments output
-  const lines = listResult.stdout
-    .split('\n')
-    .filter((line) => line.trim() !== '');
-
-  // if we have multiple deployments
-  if (lines?.length > 2) {
-    let activeDeploymentId = '';
-
-    // Extract deployment ID from the line with the name claspenv-active
-    for (const line of lines) {
-      if (line.includes('claspenv-active')) {
-        const parts = line.split(' ');
-        if (parts.length > 1) {
-          const idPart = parts[1];
-          if (idPart) {
-            activeDeploymentId = idPart;
-            break;
-          }
-        }
-      }
-    }
-
-    // if we found an active deployment id
-    if (activeDeploymentId) {
-      console.log('Found active claspenv deployment, redeploying');
-      const redeployResult = child_process.spawnSync(
-        'clasp',
-        ['redeploy', '-d', 'claspenv-active', activeDeploymentId],
-        {
-          stdio: 'inherit',
-        },
-      );
-
-      if (redeployResult.status !== 0) {
-        console.error(`Error running clasp redeploy: ${redeployResult.stderr}`);
-        setClaspId(originalScriptId);
-        process.exit(1);
-      }
-
-      console.log(`Completed deploy for ${environment} environment`);
-    } else // if we have multiple deployments but we didn't find an active one
-    {
+    if (redeployResult.status !== 0) {
+      console.error(`Error running clasp redeploy: ${redeployResult.stderr}`);
       setClaspId(originalScriptId);
-
-      // Not creating a new deployment for claspenv if there are existing deployments that are not from claspenv
-      // Since likely one of those is already the active, viewer facing deployment
-      console.log(
-        'Deployments found, but none from claspenv. Create or rename preferred deployment to "claspenv-active" to set deployment target.',
-      );
-
       process.exit(1);
     }
-    // otherwise, if we don't have any existing deployments, create one
-  } else if (lines?.length == 2 && lines[1]?.trim()?.endsWith('@HEAD')) {
-    console.log('No deployments found, creating new deployment...');
+
+    console.log(`Completed deploy for ${environment} environment`);
+  } else {
+    // otherwise, create a new active deployment
+    console.log(
+      'No active deployments found, creating new active deployment...',
+    );
 
     const deployResult = child_process.spawnSync(
       'clasp',
@@ -631,7 +618,11 @@ export const deploy = async (
       process.exit(1);
     }
 
-    console.log(`Active deployment created for ${environment} environment`);
+    console.log(
+      `Active deployment created for ${environment} environment.\n\n`,
+      'If you wish to use to another existing deployment,\n',
+      'rename preferred deployment to "claspenv-active" and archive or rename the existing "claspenv-active" deployment.\n',
+    );
   }
 
   // Reset .clasp.json back to original scriptId (always run this cleanup)
@@ -698,11 +689,10 @@ Examples:
   claspenv deploy stage
 
 Note on Deployment:
-Deployments will be pushed to the environment's deployment named 'claspenv-active'.
-If no deployments are found, a new deployment named 'claspenv-active' will be created.
-If deployments are found, but none are named 'claspenv-active',
-rename your preferred, viewer facing deployment to 'claspenv-active'
-or create a new one named 'claspenv-active' to use this utility.
+Deployments will be pushed to the environment's 'active' deployment named 'claspenv-active'.
+If no active deployments are found, a new deployment named 'claspenv-active' will be created.
+If you have a preferred, viewer facing deployment, rename it to 'claspenv-active'
+and archive the existing 'claspenv-active' deployment.
     `);
     return;
   }

@@ -142,7 +142,7 @@ If no deployments exist, a deployment named `claspenv-active` will be created.
 
 If a deployment named `claspenv-active` exists, it will be redeployed with the currently pushed code. NOTE: This is not the current code on the developer's machine or in the current git branch. The desired environment's updated code must be pushed with `claspenv push <environment>` first.
 
-If deployments exist, but none of them are named `claspenv-active`, you should pick the currently viewer-facing deployment and rename it `claspenv-active`. Or create a new deployment named `claspenv-active` in order to use deployment with this utility.
+If deployments exist, but none of them are named `claspenv-active`, a new `claspenv-active` will be created. If you have a currently viewer-facing deployment you would rather use, rename it `claspenv-active` and archive or rename the current `claspenv-active` deployment.
 
 ## Manual Procedures
 
