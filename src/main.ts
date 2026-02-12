@@ -23,6 +23,7 @@ type ClaspData = {
 };
 
 // Constants, exported for unit testing
+export const APPSSCRIPT_CONFIG_PATH = 'appsscript.json';
 export const CLASP_CONFIG_PATH = '.clasp.json';
 export const CLASPENV_CONFIG_PATH = '.claspenv.config.json';
 export const CLASPENV_LOCAL_CONFIG_PATH = '.claspenv.config.local.json';
@@ -46,13 +47,25 @@ export const isClaspProject = (): boolean => {
 };
 
 /**
- * set the script id in .clasp.json
+ * set the script id in clasp config
  * @param targetScriptId Script to change to
  */
 const setClaspId = (targetScriptId: string): void => {
   const claspConfig = fs.readJSONSync(CLASP_CONFIG_PATH);
   claspConfig.scriptId = targetScriptId;
   fs.writeJSONSync(CLASP_CONFIG_PATH, claspConfig, { spaces: 2 });
+};
+
+/**
+ * set the configuration for a web app on first deploy to get a single deployment id
+ */
+const setWebAppConfig = (): void => {
+  const appsScriptConfig = fs.readJSONSync(APPSSCRIPT_CONFIG_PATH);
+  appsScriptConfig.webapp = {
+    executeAs: 'USER_DEPLOYING',
+    access: 'MYSELF',
+  };
+  fs.writeJSONSync(APPSSCRIPT_CONFIG_PATH, appsScriptConfig, { spaces: 2 });
 };
 
 /**
@@ -171,6 +184,15 @@ const initConfigFiles = async (): Promise<void> => {
       console.log('Initialization cancelled.');
       process.exit(0);
     }
+  }
+
+  // ask if this is a web app to set up the manifest file for single deployments
+  const isAWebApp = await promptUser(
+    'Is this a web app? (for single deployment operation):',
+  );
+
+  if (isAWebApp) {
+    setWebAppConfig();
   }
 
   // Create the base config file
