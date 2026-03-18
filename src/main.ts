@@ -389,7 +389,7 @@ clasp auth login
 ### Installing \`claspenv\` from source
 
 \`\`\`bash
-git clone https://github.com/GSA-APS/claspenv.git
+git clone https://github.com/GSA/claspenv.git
 cd claspenv
 npm install
 npm run build && npm install -g .

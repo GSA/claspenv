@@ -36,7 +36,7 @@ You will be guided through authenticating with Google Drive to allow `clasp` to 
 Currently this utility must be installed from source:
 
 ```bash
-git clone https://github.com/GSA-APS/claspenv.git
+git clone https://github.com/GSA/claspenv.git
 cd claspenv
 npm install
 npm run build && npm install -g .
@@ -53,8 +53,6 @@ Otherwise, start in the repository folder for the project you wish to manage wit
 ### Create Google Apps Script Projects
 
 Ensure you have three separate copies of your project, development, stage, and production. It doesn't matter what they are named or if they are in folders, only the Script IDs matter.
-
-It is recommended to prefix the project names with `DEV_`, `STAGE_`, and `PROD_` as sometimes the end of the project name can be truncated in the UI.
 
 ### Gather Script IDs
 
@@ -223,3 +221,13 @@ claspenv --local-init
 
 - `npm`
 - [clasp](https://github.com/google/clasp) - Google Apps Script command-line tool
+
+```
+
+## To Do
+
+- Add culling for old deployments, as there may be some limitations
+
+## Feedback and Questions
+
+Email [anthony.peluso@gsa.gov](mailto:anthony.peluso@gsa.gov)
