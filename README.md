@@ -74,9 +74,17 @@ Before using `claspenv`, initialize the configuration files:
 claspenv --init
 ```
 
+#### Git Branches
+
+`claspenv` does not manage git. Upon project setup, some options are offered for convenience.
+
 First, the git repository is checked for `dev`, `stage` and `prod` branches.
 
 If these branches do not exist, the user is prompted to ask if they want to create them.
+
+There is no requirement to use the `prod` branch (or any of the branches), if you'd rather use `main`. It's just there for parity.
+
+#### Script IDs
 
 Then the user is prompted for the Script IDs for the dev, stage and prod Google Apps Script Projects.
 
