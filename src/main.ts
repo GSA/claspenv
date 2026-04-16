@@ -383,7 +383,7 @@ A brief description of your Google Apps Script project.
 
 \`\`\`bash
 npm install -g @google/clasp
-clasp auth login
+clasp login
 \`\`\`
 
 ### Installing \`claspenv\` from source

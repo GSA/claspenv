@@ -26,7 +26,7 @@ This project requires `clasp`: https://github.com/google/clasp
 
 ```bash
 npm install -g @google/clasp
-clasp auth login
+clasp login
 ```
 
 You will be guided through authenticating with Google Drive to allow `clasp` to push and pull code.
