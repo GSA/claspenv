@@ -232,10 +232,6 @@ claspenv --local-init
 
 ```
 
-## To Do
-
-- Add culling for old deployments, as there may be some limitations
-
 ## Feedback and Questions
 
 Email [anthony.peluso@gsa.gov](mailto:anthony.peluso@gsa.gov)
