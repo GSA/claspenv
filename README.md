@@ -166,6 +166,19 @@ If a deployment named `claspenv-active` exists, it will be redeployed with the c
 
 If deployments exist, but none of them are named `claspenv-active`, a new `claspenv-active` will be created. If you have a currently viewer-facing deployment you would rather use, rename it `claspenv-active` and archive or rename the current `claspenv-active` deployment.
 
+### Deployment Version Limit
+
+⚠️ **Important:** Google Apps Script enforces a hard limit of **200 versions** per project. Each deployment (including redeployments) creates a new version, so you will eventually reach this limit regardless of your deployment strategy. There is no way around this limit.
+
+When you approach or reach the 200 version limit, you must manually delete old versions to free up space. To do this:
+
+1. Open your Apps Script project in the browser
+2. Click **Project History** (the history icon)
+3. Click **Bulk delete versions**
+4. Select the versions you want to delete and confirm
+
+For more information, see Google's documentation: [Versions - Bulk Delete](https://developers.google.com/apps-script/guides/versions#bulk-delete)
+
 ## Opening/Testing Active Deployments
 
 To test an active deployment in your default browser, run:
